@@ -12,6 +12,9 @@ using namespace std;
 void test_indexing();
 void test_ops();
 void test_windows();
+void cnr1();
+void cnr2();
+void cnr3();
 // utility functions
 template <typename T> 
 Tensor<T> fill_tensor(size_t& batches, size_t& rows, size_t& cols, size_t& channels);
@@ -19,58 +22,158 @@ template <typename T>
 void print_valarray(const char* label, const valarray<T>& a);
 
  
-int main() {
-	// random data generator
-	float data_range_low  = -1;
-	float data_range_high = 1;
+int main(int argc, char** argv) {
+
+	int cnr_number = 0;
+
+   	if(argc > 1){
+   		cnr_number = atoi(argv[1]);
+   	}
+
+   	if(cnr_number == 1){
+   		cnr1();
+   	} else if(cnr_number == 2){
+   		cnr2();
+   	} else if( cnr_number == 3){
+   		cnr3();
+   	} else{
+   		cnr1();
+   		cnr2();
+   		cnr3();
+   	}
+
+   	return 0;
+} 
+
+void cnr1(){
+	float data_range_low  = -10;
+	float data_range_high = 10;
 	random_device rd;
 	mt19937 e(rd());
-	uniform_real_distribution<> dist(-1,1);
+	uniform_real_distribution<> dist(data_range_low, data_range_high);
 	// input tensor size
-	size_t batch_size = 2; 
-	size_t im_channels = 3;
-	size_t rows = 10;
-	size_t cols = 10;
-	size_t size = rows*cols;
+	size_t batch_size = 1; 
+	size_t im_channels_1 = 3;
+	size_t rows_1 = 224;
+	size_t cols_1 = 224;
 	// convolution filter size
-	size_t f_num = 4;
-	size_t f_rows  = 3;
-	size_t f_cols  = 3;
-	size_t f_size = f_rows*f_cols;
+	size_t f_num_1 = 64;
+	size_t f_rows_1  = 7;
+	size_t f_cols_1  = 7;
 	size_t bias = 0;
-	size_t stride = 1;
+	size_t stride = 2;
 	// batch norm parameters
 	float gamma = 1;
 	float beta = 1; 
 	float eps = 1e-10;
 
+	// // CNR 1 ~ conv1
+	Tensor<float> input1   = fill_tensor<float>(batch_size, rows_1, cols_1, im_channels_1);
+	Tensor<float> filter1 = fill_tensor<float>(f_num_1, f_rows_1, f_cols_1, im_channels_1);
+	std::cout << "cnr1 starting (1, 224, 224, 3) -> (1, 112, 112, 64)..." << std::endl;
+	Tensor<float> c1 = convolution_layer(input1, filter1, bias, stride);
+	std::cout << "convolution1: ";
+	c1.print_shape();
+	Tensor<float> n1 = batchnorm_layer(c1, gamma, beta, eps);
+	std::cout << "batch norm1: ";
+	n1.print_shape();
+	Tensor<float> r1 = relu_layer(n1);
+	std::cout << "relu1: ";
+	r1.print_shape();
+}
+
+void cnr2(){
+	float data_range_low  = -10;
+	float data_range_high = 10;
+	random_device rd;
+	mt19937 e(rd());
+	uniform_real_distribution<> dist(data_range_low, data_range_high);
+	// input tensor size
+	size_t batch_size = 1; 
+	size_t im_channels_2 = 128;
+	size_t rows_2 = 28;
+	size_t cols_2 = 28;
+	// convolution filter size
+	size_t f_num_2_1  = 128;
+	size_t f_rows_2_1 = 3;
+	size_t f_cols_2_1  = 3;
+	size_t stride_2_1  = 1;
+	size_t bias = 0;
+	// batch norm parameters
+	float gamma = 1;
+	float beta = 1; 
+	float eps = 1e-10;
+	// CNR 2 ~ conv3_x 3x3, 128->128 into shortcut no extra conv
+	Tensor<float> shortcut_2  = fill_tensor<float>(batch_size, rows_2, cols_2, im_channels_2);
+	Tensor<float> input2   = fill_tensor<float>(batch_size, rows_2, cols_2, im_channels_2);
+	Tensor<float> filter2_1 = fill_tensor<float>(f_num_2_1, f_rows_2_1, f_cols_2_1, im_channels_2);
+	std::cout << "cnr2 starting (1, 28, 28, 128) -> (1, 28, 28, 512) + shortcut..." << std::endl;
+	Tensor<float> c2 = convolution_layer(input2, filter2_1, bias, stride_2_1);
+	std::cout << "convolution1: ";
+	c2.print_shape();
+	Tensor<float> n2 = batchnorm_layer(c2, gamma, beta, eps);
+	std::cout << "batch norm1: ";
+	n2.print_shape();
+
+	std::cout << "shortcut2: ";
+	shortcut_2.print_shape();
+	Tensor<float> shortcut_out_2 = add_layer(shortcut_2, n2);
+	std::cout << "shortcut_out2: ";
+	shortcut_out_2.print_shape();
+
+	Tensor<float> r2 = relu_layer(shortcut_out_2);
+	std::cout << "relu1: ";
+	r2.print_shape();
+}
+void cnr3(){
+	float data_range_low  = -10;
+	float data_range_high = 10;
+	random_device rd;
+	mt19937 e(rd());
+	uniform_real_distribution<> dist(data_range_low, data_range_high);
+	// input tensor size
+	size_t batch_size = 1; 
+	size_t im_channels_3 = 256;
+	size_t rows_3 = 14;
+	size_t cols_3 = 14;
+	// convolution filter size
+	size_t f_num_3  = 512;
+	size_t f_rows_3 = 3;
+	size_t f_cols_3  = 3;
+	size_t stride_3  = 2;
+	size_t bias = 0;
+	// batch norm parameters
+	float gamma = 1;
+	float beta = 1; 
+	float eps = 1e-10;
+	// CNR 3 ~ conv5_x 3x3, 256->512 into shortcut with extra conv
+	Tensor<float> shortcut_3  = fill_tensor<float>(batch_size, rows_3, cols_3, im_channels_3);
+	Tensor<float> input3   = fill_tensor<float>(batch_size, rows_3, cols_3, im_channels_3);
+	Tensor<float> filter3_1 = fill_tensor<float>(f_num_3, f_rows_3, f_cols_3, im_channels_3);
+	Tensor<float> filter3_2 = fill_tensor<float>(f_num_3, f_rows_3, f_cols_3, im_channels_3);
+	std::cout << "cnr3 starting (1, 256, 14, 14) -> (1, 512, 7, 7) + shortcut w/ extra conv..." << std::endl;
+	Tensor<float> c3 = convolution_layer(input3, filter3_1, bias, stride_3);
+	std::cout << "convolution3: ";
+	c3.print_shape();
+	Tensor<float> n3 = batchnorm_layer(c3, gamma, beta, eps);
+	std::cout << "batch norm3: ";
+	n3.print_shape();
+
+	Tensor<float> s_c = convolution_layer(shortcut_3, filter3_2, bias, stride_3);
+	std::cout << "s_c: ";
+	s_c.print_shape();
+	Tensor<float> s_n = batchnorm_layer(s_c, gamma, beta, eps);
+	std::cout << "s_batch_norm: ";
+	s_n.print_shape();
 
 
-	Tensor<float> input  = fill_tensor<float>(batch_size, rows, cols, im_channels);
-	Tensor<float> filter = fill_tensor<float>(f_num, f_rows, f_cols, im_channels);
-
-	cout << "   input: " ;
-	input.print_shape();
-	cout << "  filter: " ;
-	filter.print_shape();
-	Tensor<float> c = convolution_layer(input, filter, bias, stride);
-	cout << "conv out: " ;
-	c.print_shape();
-	Tensor<float> n = batchnorm_layer(c, gamma, beta, eps);
-	cout << "norm out: " ;
-	n.print_shape();
-	Tensor<float> r = relu_layer(n);
-	cout << "relu out: " ;
-	r.print_shape();
-
-
-	Tensor<float> cnr = relu_layer(batchnorm_layer(convolution_layer(input, filter, bias, stride), gamma, beta, eps));
-	cout << " \n cnr out: " ;
-	cnr.print_shape();
-	// output.printTensor("output");
-
-
-} 
+	Tensor<float> out = add_layer(s_n, n3);
+	std::cout << "s_batch_norm + batch_norm3: ";
+	out.print_shape();
+	Tensor<float> r3 = relu_layer(out);
+	std::cout << "relu3: ";
+	r3.print_shape();
+}
 
 template <typename T> 
 Tensor<T> fill_tensor(size_t& batches, size_t& rows, size_t& cols, size_t& channels){

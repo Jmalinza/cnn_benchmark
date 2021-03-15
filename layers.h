@@ -78,7 +78,26 @@ struct Tensor{
 	}
 };
 
-
+template <typename T>
+Tensor<T> add_layer(const Tensor<T>& a, const Tensor<T>& b){
+	int batch_size = a.data.size();
+	int i_index = 0;
+	Tensor<T> return_tensor(batch_size);
+	for(Image<T> this_image_a: a.data){
+		Image<T> this_image_b = b.data[i_index];
+		Image<T> output_image(this_image_a.im_channels(), this_image_a.rows(), this_image_a.cols());
+		int c_index = 0;
+		for(Matrix<T> this_channel_a: this_image_a.data){
+			Matrix<T> this_channel_b = this_image_b.data[c_index];
+			Matrix<T> result = this_channel_a.add(this_channel_b);
+			output_image.data[c_index].update(result.array());
+			++c_index;
+		}
+		return_tensor.push_back(output_image);
+		++i_index;
+	}
+	return return_tensor;
+}
 
 template <typename T>
 Tensor<T> convolution_layer(const Tensor<T> &input, 
